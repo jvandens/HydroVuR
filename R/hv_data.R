@@ -16,7 +16,7 @@
 #' @param start_time start date and time in ISO8601 string format:  YYYY-MM-DD HH:MM:SS
 #' @param end_time end date and time in ISO8601 string format:  YYYY-MM-DD HH:MM:SS
 #' @param tz time zone desired of returned data using \code{OlsonNames()}
-#' @param client HydroVu API token as returned from \code{hv_auth()}
+#' @param token HydroVu API token as returned from \code{hv_auth()}
 #' @param url base API url
 #'
 #' @return a dataframe
@@ -25,14 +25,18 @@
 #' @examples
 #' \dontrun{
 #' data <- hv_data("test",
-#'                 "2018-10-15 04:00", "2018-10-31 01:00", tz = "America/New_York", token)
+#'                 "2018-10-15 04:00:00", "2018-10-31 01:00:00", tz = "America/New_York", token)
 #' }
 hv_data <- function(location_name, start_time, end_time, tz = "UTC",
-                    client, url = "https://www.hydrovu.com/public-api/v1/locations/") {
+                    token, url = "https://www.hydrovu.com/public-api/v1/locations/") {
 
   # convert the time to timestamp
-  start <- as.numeric(as.POSIXct(start_time, tz = tz))
-  end <- as.numeric(as.POSIXct(end_time, tz = tz))
+ # start <- as.numeric(as.POSIXct(start_time, tz = tz))
+  #end <- as.numeric(as.POSIXct(end_time, tz = tz))
+  
+  # convert the time to timestamp, convert to UTC for lookup in Hydrovu
+  start <- as.numeric(lubridate::with_tz(lubridate::ymd_hms(start_time, tz = tz), tzone = "UTC"))
+  end <- as.numeric(lubridate::with_tz(lubridate::ymd_hms(end_time, tz = tz), tzone = "UTC"))
 
   # get the locations
   locs <- hv_locations(client)
@@ -63,7 +67,8 @@ hv_data <- function(location_name, start_time, end_time, tz = "UTC",
 
   # collapse the paginated date and clean up
   df <- purrr::map_dfr(data, flatten_page_params) %>%
-    dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = tz),
+    dplyr::mutate(timestamp = lubridate::with_tz(lubridate::as_datetime(timestamp, tz = "UTC"), tzone = tz),   
+                  #lubridate::as_datetime(timestamp, tz = tz),
                   Location = location_name) %>%
     dplyr::inner_join(params, by = "parameterId") %>%
     dplyr::inner_join(units, by = "unitId") %>%
