@@ -39,21 +39,21 @@ hv_data <- function(location_name, start_time, end_time, tz = "UTC",
   end <- as.numeric(lubridate::with_tz(lubridate::ymd_hms(end_time, tz = tz), tzone = "UTC"))
 
   # get the locations
-  locs <- hv_locations(client)
+  locs <- hv_locations(token)
   location_id <- locs[locs$name==location_name,]$id
 
   # build the url
   url <- paste0(url, location_id, "/data?endTime=", end, "&startTime=", start)
 
   req <- httr2::request(url)
-  resp <-  req %>% httr2::req_oauth_client_credentials(client) %>% httr2::req_perform()
+  resp <-  req %>% httr2::req_oauth_client_credentials(token) %>% httr2::req_perform()
   data <- list(resp %>% httr2::resp_body_json())
   h <- resp %>% httr2::resp_headers()
 
   while (!is.null(h[["X-ISI-Next-Page"]]))
   {
     resp <- req %>% httr2::req_headers("X-ISI-Start-Page" = h[["X-ISI-Next-Page"]]) %>%
-      httr2::req_oauth_client_credentials(client) %>% httr2::req_perform()
+      httr2::req_oauth_client_credentials(token) %>% httr2::req_perform()
     data <- c(data, list(resp %>% httr2::resp_body_json()))
     h <- resp %>% httr2::resp_headers()
 
