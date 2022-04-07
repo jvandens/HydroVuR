@@ -9,7 +9,7 @@ hv_data(
   start_time,
   end_time,
   tz = "UTC",
-  client,
+  token,
   url = "https://www.hydrovu.com/public-api/v1/locations/"
 )
 }
@@ -22,7 +22,7 @@ hv_data(
 
 \item{tz}{time zone desired of returned data using \code{OlsonNames()}}
 
-\item{client}{HydroVu API token as returned from \code{hv_auth()}}
+\item{token}{HydroVu API token as returned from \code{hv_auth()}}
 
 \item{url}{base API url}
 }
@@ -45,6 +45,6 @@ per page.  Thus long time spans may take a while to download and/or timeout.
 \examples{
 \dontrun{
 data <- hv_data("test",
-                "2018-10-15 04:00", "2018-10-31 01:00", tz = "America/New_York", token)
+                "2018-10-15 04:00:00", "2018-10-31 01:00:00", tz = "America/New_York", token)
 }
 }

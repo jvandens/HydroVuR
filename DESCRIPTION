@@ -20,3 +20,7 @@ Imports:
     lubridate,
     magrittr,
     purrr
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

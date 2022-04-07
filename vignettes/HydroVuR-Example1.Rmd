@@ -1,0 +1,129 @@
+---
+title: "HydroVuR - Example 1"
+author: "Jaak Van den Sype"
+date: "2022-04-07"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{HydroVuR-Example1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(HydroVuR)
+#devtools::load_all()
+```
+
+# Introduction
+
+The following is a basic example of how to use the `HydroVuR` package to access the In-Situ HydroVu API.  Documentation of the API endpoint can be found at:  https://www.hydrovu.com/public-api/docs/index.html
+
+
+# Authentication
+
+To authenticate provide your client_id and key and get a token using `hv_auth()`.  The API credentials are managed on HydroVu site under Users | Manage API Access Credentials
+
+```{r}
+
+# set client id and key
+client_id <- 'PublicApiDemo'
+key <- 'PublicApiSecret'
+
+# get a token
+token <- hv_auth(client_id, key)
+
+```
+
+# Locations
+
+Get a list of locations available for this access token using `hv_locations()`
+
+```{r}
+
+# get the locations
+locs <- hv_locations(token)
+
+knitr::kable(locs)
+
+```
+
+# Get Data
+
+## Single Location
+
+To get data from a location, supply the location name, start/end dates and the desired timezone to `hv_data()`.
+
+Note: the timezone supplied is for **both** the input start/end times and the return data.
+
+
+```{r}
+
+vulink <- hv_data("In-Situ Poudre Well", "2000-01-01 00:00:00", Sys.time(), 
+                tz = "America/New_York", token)
+
+knitr::kable(vulink)
+
+```
+
+The data returned will e a `data.frame` in a "long" format which makes further analysis or plotting easier
+
+```{r fig.height=4, fig.width=6}
+library(ggplot2)
+
+ggplot(vulink, aes(x = timestamp, y = value)) + 
+  geom_point() + geom_line() + 
+  facet_wrap(~Parameter, scales = 'free', ncol = 2)
+```
+
+## Multiple Locations
+
+To get data from multiple locations at once, map over `hv_data()` and a vector of locations (for example, as returned from `hv_locations()`)
+
+```{r}
+library(purrr)
+
+all_data <- purrr::map_dfr(locs$name, hv_data, 
+                           start_time = "2000-01-01 00:00:00", end_time = Sys.time(),
+                    tz = "America/New_York", token = token)
+
+```
+
+```{r fig.height=4, fig.width=6}
+
+ggplot(all_data, aes(x = timestamp, y = value)) + 
+  geom_point() + geom_line() + 
+  facet_grid(Parameter ~ Location, scales = 'free')
+
+```
+
+# Other
+
+A list of friendly name mappings for parameters and units can be accessed using the `hv_names()` function.  Note that `hv_data()` will already include the friendly names in the output by calling this function so generally there is no need to call this function directly.
+
+`hv_names()` provides a `return` flag to control what is returned.  If `return = "params"` is set, a `data.frame` of the parameters is returned.  If `return = "units"` is set, a `data.frame` of unit names is returned, if no return is set, it defaults to `return = "both"` and a `list` containing the above two dataframes is returned.
+
+```{r}
+# get the Friendly Names
+params <- hv_names(token, return = "params")
+
+knitr::kable(head(params))
+```
+
+```{r}
+units <- hv_names(token, return = "units")
+
+knitr::kable(head(units))
+```
+
+```{r}
+both <- hv_names(token)
+print(both)
+```
+
