@@ -22,5 +22,6 @@ Imports:
     purrr
 Suggests: 
     rmarkdown,
-    knitr
+    knitr,
+    ggplot2
 VignetteBuilder: knitr
